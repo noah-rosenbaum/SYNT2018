@@ -19,7 +19,10 @@ end
 
 def invalid_line line
 	l = line.downcase
-	['[[image:', '[[file:', '[[template:', '[[wikipedia:', '{{', '}}'].any? { |snippet|	l.include? snippet } || l.start_with?('| ') 
+	badtags = ['[[image:', '[[file:', '[[template:', '[[wikipedia:', '[[module:', '{{', '}}'].any? do |snippet|
+		l.include? snippet 
+	end 
+	badtags || l.start_with?('| ') 
 end
 #sample = "[bla] | bla [[First link | Second link]] bla [[sugyhr]]!"
 #puts "the first link in #{sample} should be 'Second link', I found: #{extract_first_link_title(sample)}"
@@ -27,7 +30,7 @@ end
 text_of = {}
 
 arr = []
-links = {}
+link = nil
 page = ""
 ARGF.each_line do |line|
 	page += line unless invalid_line(line) # TODO this may not cover all cases, or cover too many!
@@ -50,11 +53,11 @@ ARGF.each_line do |line|
 												unless text =~ /^\#REDIRECT/
 													text_of[title] = text 
 													if extract_first_link_title(text) != nil
-														links[title] = extract_first_link_title(text)
+														link = extract_first_link_title(text)
 													else
-														links[title] = title
+														link = title
 													end
-													puts "\n#{title} => #{links[title]}"
+													puts "#{title.downcase} => #{link.downcase}"
 												end
 											end
 										end
@@ -70,27 +73,5 @@ ARGF.each_line do |line|
 	end
 end
 
-
-def link_chain_creator(title,text_of)
-	link_chain = [title]
-	broken = nil
-	while broken != true
-		current_title = link_chain[0]
-		current_text = text_of[current_title]
-		next_title = extract_first_link_title(current_text)
-		if link_chain.include? next_title
-			broken = true
-		else
-			link_chain.push(next_title)
-		end
-	end
-	link_chain
-end
-
-10.times do 
-  puts ">>>>>>>>\n"
-  alinks = links.keys.sample
-  puts link_chain_creator(alinks,text_of)
-end
 
 print "finished at #{`date`}"
