@@ -8,21 +8,34 @@ def extract_first_link_title(text)
 	#puts ">>>\ntrying to extract first title link from #{text}\n\n"
 	# to do unless text =~ /<comment>/
 	parensdeep = 0
+	bracesdeep = 0
 	bracketsdeep = 0
+	badlink = false
 	foundpipe = false
 	foundpound = false
 	link = ""
 	letters = text.split("")
 	letters.each do |letter|
+		bracesdeep -= 1 if letter == "}" unless bracketsdeep == 2 
 		parensdeep -= 1 if letter == ")" unless bracketsdeep == 2
 		bracketsdeep -= 1 if letter == "]"
-		link << letter if bracketsdeep == 2 && parensdeep == 0
-		bracketsdeep += 1 if letter == "["
-		parensdeep += 1 if letter == "(" unless bracketsdeep == 2
 		foundpipe = true if letter == "|" && bracketsdeep == 2
 		foundpound = true if letter == "#" && bracketsdeep == 2
-		break if (bracketsdeep != 2 && link != "") || (foundpipe || foundpound)
+		#puts "[#{bracketsdeep} {#{bracesdeep} (#{parensdeep} \##{foundpound} |#{foundpipe} : L#{link} #{letter}"
+		if (bracketsdeep == 0 && link != "")
+			if start_with_bad_tag?(link)
+				link = ""
+				foundpound = foundpipe = false
+			else
+				break
+			end
+		end
+		link << letter if bracketsdeep == 2 && parensdeep == 0 && bracesdeep == 0 && !foundpound && !foundpipe
+		bracketsdeep += 1 if letter == "["
+		bracesdeep += 1 if letter == "{" unless bracketsdeep == 2
+		parensdeep += 1 if letter == "(" unless bracketsdeep == 2
 	end
+	link = link[1..-1] if link.start_with?(':')
 	link
 end
 
@@ -30,17 +43,12 @@ end
 #	text.gsub /(\{\{[^\}]*\}\})/, ''
 #end
 
-def invalid_line line
-	l = line.downcase
-	badtags = ['[[image:', '[[file:', '[[template:', '[[wikipedia:', '[[module:', '{{', '}}'].any? do |snippet|
-		l.include? snippet 
-	end 
-	badtags || l.start_with?('| ') 
+def start_with_bad_tag?(link)
+	badtags = ['image:', 'file:', 'template:', 'wikipedia:', 'module:', ':']
+	badtags.any? { |badtag| link.start_with? badtag } 
 end
 #sample = "[bla] | bla [[First link | Second link]] bla [[sugyhr]]!"
 #puts "the first link in #{sample} should be 'Second link', I found: #{extract_first_link_title(sample)}"
-
-text_of = {}
 
 arr = []
 link = nil
@@ -48,30 +56,28 @@ page = ""
 found_start = false
 
 ARGF.each_line do |line|
-	page << line unless invalid_line(line) # TODO this may not cover all cases, or cover too many!
+	page << line #unless invalid_line(line) # TODO this may not cover all cases, or cover too many!
 	if line =~ /<\/page>/ 
 		#puts "*****************\n***************\npage: " + page + "\n************\n"
 		if page =~ /<title>(.*)<\/title>.*<text.*?>(.*)<\/text>/m
-			title = $1
-			text =  $2
+			title = $1.downcase
+			text =  $2.downcase
 			#puts "\n&&&&&&&&&&&&&&&&&&&&&&&>> The title is #{title}"
 			#puts "\n&&&&&&&&&&&&&&&&&&&&&&&>> The text is #{text}"
-			unless title =~ /Talk:/i
-				unless title =~ /Draft:/
-					unless title =~ /Category:/
-						unless title =~ /User:/
-							unless title =~ /File:/
-								unless title =~ /Template:/
-									unless title =~ /Wikipedia:/
-										unless title =~ /Portal:/
+			unless title =~ /talk:/
+				unless title =~ /draft:/
+					unless title =~ /category:/
+						unless title =~ /user:/
+							unless title =~ /file:/
+								unless title =~ /template:/
+									unless title =~ /wikipedia:/
+										unless title =~ /portal:/
 											unless title =~ /(disambiguation)/
-												text_of[title] = text 
-												if extract_first_link_title(text) != nil
-													link = extract_first_link_title(text)
-												else
+												link = extract_first_link_title(text)
+												if link.nil?  || link == ""
 													link = title
 												end
-												puts "#{title.downcase} => #{link.downcase}"
+												puts "#{title} => #{link}"
 											end
 										end
 									end
