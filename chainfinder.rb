@@ -6,9 +6,9 @@ STDIN.each do |line|
 	$links[array[0]] = array[1] if array.size == 2
 end
 
-puts "LINKS found:"
-puts $links
-puts ">>>>>>>>>>>"
+#puts "LINKS found:"
+#puts $links
+#puts ">>>>>>>>>>>"
 
 
 def link_chain_creator(title)
@@ -29,13 +29,13 @@ def link_chain_creator(title)
 	link_chain.reverse
 end
 
-0.times do 
+10000.times do 
   puts ">>>>>>>>\n"
   alinks = $links.keys.sample
   puts link_chain_creator(alinks)
 end
 
-$links.keys.each do |key|
-	puts ">>>>>>>>\n"
-	puts link_chain_creator(key)
-end
+#$links.keys.each do |key|
+#	puts ">>>>>>>>\n"
+#	puts link_chain_creator(key)
+#end

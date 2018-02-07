@@ -6,11 +6,24 @@ print "started at #{`date`}"
 
 def extract_first_link_title(text)
 	#puts ">>>\ntrying to extract first title link from #{text}\n\n"
-	unless text =~ /<comment>/
-		unless text =~ /#REDIRECT/
-			$1 if text =~ /\[\[([^\|\]]*)\|?[^\]]*\]\]/m
-		end
+	# to do unless text =~ /<comment>/
+	parensdeep = 0
+	bracketsdeep = 0
+	foundpipe = false
+	foundpound = false
+	link = ""
+	letters = text.split("")
+	letters.each do |letter|
+		parensdeep -= 1 if letter == ")" unless bracketsdeep == 2
+		bracketsdeep -= 1 if letter == "]"
+		link << letter if bracketsdeep == 2 && parensdeep == 0
+		bracketsdeep += 1 if letter == "["
+		parensdeep += 1 if letter == "(" unless bracketsdeep == 2
+		foundpipe = true if letter == "|" && bracketsdeep == 2
+		foundpound = true if letter == "#" && bracketsdeep == 2
+		break if (bracketsdeep != 2 && link != "") || (foundpipe || foundpound)
 	end
+	link
 end
 
 #def remove_curly_sections text#
@@ -32,8 +45,10 @@ text_of = {}
 arr = []
 link = nil
 page = ""
+found_start = false
+
 ARGF.each_line do |line|
-	page += line unless invalid_line(line) # TODO this may not cover all cases, or cover too many!
+	page << line unless invalid_line(line) # TODO this may not cover all cases, or cover too many!
 	if line =~ /<\/page>/ 
 		#puts "*****************\n***************\npage: " + page + "\n************\n"
 		if page =~ /<title>(.*)<\/title>.*<text.*?>(.*)<\/text>/m
@@ -50,15 +65,13 @@ ARGF.each_line do |line|
 									unless title =~ /Wikipedia:/
 										unless title =~ /Portal:/
 											unless title =~ /(disambiguation)/
-												unless text =~ /^\#REDIRECT/
-													text_of[title] = text 
-													if extract_first_link_title(text) != nil
-														link = extract_first_link_title(text)
-													else
-														link = title
-													end
-													puts "#{title.downcase} => #{link.downcase}"
+												text_of[title] = text 
+												if extract_first_link_title(text) != nil
+													link = extract_first_link_title(text)
+												else
+													link = title
 												end
+												puts "#{title.downcase} => #{link.downcase}"
 											end
 										end
 									end
