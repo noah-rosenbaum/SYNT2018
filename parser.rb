@@ -45,7 +45,7 @@ end
 
 def start_with_bad_tag?(link)
 	badtags = ['image:', 'file:', 'template:', 'wikipedia:', 'module:', ':']
-	badtags.any? { |badtag| link.start_with? badtag } 
+	badtags.any? { |badtag| link.downcase.start_with? badtag } 
 end
 #sample = "[bla] | bla [[First link | Second link]] bla [[sugyhr]]!"
 #puts "the first link in #{sample} should be 'Second link', I found: #{extract_first_link_title(sample)}"
@@ -60,19 +60,19 @@ ARGF.each_line do |line|
 	if line =~ /<\/page>/ 
 		#puts "*****************\n***************\npage: " + page + "\n************\n"
 		if page =~ /<title>(.*)<\/title>.*<text.*?>(.*)<\/text>/m
-			title = $1.downcase
-			text =  $2.downcase
+			title = $1
+			text =  $2
 			#puts "\n&&&&&&&&&&&&&&&&&&&&&&&>> The title is #{title}"
 			#puts "\n&&&&&&&&&&&&&&&&&&&&&&&>> The text is #{text}"
-			unless title =~ /talk:/
-				unless title =~ /draft:/
-					unless title =~ /category:/
-						unless title =~ /user:/
-							unless title =~ /file:/
-								unless title =~ /template:/
-									unless title =~ /wikipedia:/
-										unless title =~ /portal:/
-											unless title =~ /(disambiguation)/
+			unless title =~ /talk:/i
+				unless title =~ /draft:/i
+					unless title =~ /category:/i
+						unless title =~ /user:/i
+							unless title =~ /file:/i
+								unless title =~ /template:/i
+									unless title =~ /wikipedia:/i
+										unless title =~ /portal:/i
+											unless title =~ /(disambiguation)/i
 												link = extract_first_link_title(text)
 												if link.nil?  || link == ""
 													link = title
